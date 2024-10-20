@@ -98,6 +98,29 @@ DEFAULT_INSIGHT_FIELDS = (
     "website_ctr",
 )
 
+ADV_INSIGHTS_FIELDS = (
+    "campaign_id",
+    "adset_id",
+    "ad_id",
+    "date_start",
+    "date_stop",
+    "reach",
+    "impressions",
+    # "frequency",
+    "clicks",
+    # "unique_clicks",
+    # "ctr",
+    # "unique_ctr",
+    # "cpc",
+    #"cpm",
+    #"cpp",
+    "spend",
+    "actions",
+    "action_values",
+    #"cost_per_action_type",
+    #"website_ctr",
+)
+
 TInsightsLevels = Literal["account", "campaign", "adset", "ad"]
 
 INSIGHTS_PRIMARY_KEY = ("campaign_id", "adset_id", "ad_id", "date_start")

@@ -1,9 +1,11 @@
 import dlt
+import datetime
 
 from facebook_ads import (
     facebook_ads_source,
     facebook_insights_source,
     DEFAULT_ADCREATIVE_FIELDS,
+    ADV_INSIGHTS_FIELDS,
     AdCreative,
     enrich_ad_objects,
 )
@@ -108,7 +110,7 @@ def load_insights() -> None:
         pipeline_name="facebook_insights",
         destination='duckdb',
         dataset_name="facebook_insights_data",
-        dev_mode=True,
+        # dev_mode=True,
     )
     # just load 1 past day with attribution window of 7 days - that will re-acquire last 8 days + today
     i_daily = facebook_insights_source(initial_load_past_days=1)
@@ -116,10 +118,35 @@ def load_insights() -> None:
     info = pipeline.run([i_daily, i_weekly])
     print(info)
 
+def load_historic_insights() -> None:
+    """Load the all insights data since 2022-01-01 as a proof of concept"""
+    pipeline = dlt.pipeline(
+        pipeline_name='facebook_insights',
+        destination='duckdb',
+        dataset_name='facebook_insights_historic',
+        progress="log"
+    )
+    # 2022-01-01 is the start of our historic data
+    number_of_days = 7 # (datetime.today() - datetime(2022, 1, 1)).days
+    fb_ads_insights = facebook_insights_source(
+        initial_load_past_days=number_of_days,
+        fields=ADV_INSIGHTS_FIELDS,
+        action_breakdowns=("action_type",),
+        action_attribution_windows=('7d_click', '1d_view'),
+    )
+    # action_breakdowns[0] must be one of the following values: action_device, conversion_destination, matched_persona_id, matched_persona_name, signal_source_bucket, 
+    # standard_event_content_type, action_canvas_component_name, 
+    # action_carousel_card_id, action_carousel_card_name, action_destination, action_reaction, action_target_id, action_type, action_video_sound, action_video_type",
+    info = pipeline.run(fb_ads_insights, write_disposition="replace")
+    print(info)
+
+
 
 if __name__ == "__main__":
     # load_all_ads_objects()
-    merge_ads_objects()
+    # merge_ads_objects()
+
+    load_historic_insights()
     # load_ads_with_custom_fields()
     # load_only_disapproved_ads()
     # load_and_enrich_objects()

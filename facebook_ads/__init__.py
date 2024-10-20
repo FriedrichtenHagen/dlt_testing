@@ -35,6 +35,7 @@ from .settings import (
     DEFAULT_CAMPAIGN_FIELDS,
     DEFAULT_LEAD_FIELDS,
     TFbMethod,
+    ADV_INSIGHTS_FIELDS,
     TInsightsBreakdownOptions,
 )
 from .settings import (
