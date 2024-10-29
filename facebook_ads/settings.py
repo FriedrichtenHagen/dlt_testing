@@ -159,7 +159,11 @@ ALL_ACTION_ATTRIBUTION_WINDOWS = (
     "28d_view",
 )
 
-ALL_ACTION_BREAKDOWNS = ("action_type", "action_target_id", "action_destination")
+ALL_ACTION_BREAKDOWNS = (
+    "action_type", 
+    "action_target_id", 
+    "action_destination", 
+)
 
 INSIGHTS_BREAKDOWNS_OPTIONS: Dict[TInsightsBreakdownOptions, Any] = {
     "ads_insights": {"breakdowns": (), "fields": ()},

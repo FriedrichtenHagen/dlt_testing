@@ -1,5 +1,5 @@
 import dlt
-import datetime
+from datetime import datetime
 
 from facebook_ads import (
     facebook_ads_source,
@@ -127,16 +127,28 @@ def load_historic_insights() -> None:
         progress="log"
     )
     # 2022-01-01 is the start of our historic data
-    number_of_days = 7 # (datetime.today() - datetime(2022, 1, 1)).days
+    number_of_days = (datetime.today() - datetime(2022, 1, 1)).days
     fb_ads_insights = facebook_insights_source(
         initial_load_past_days=number_of_days,
         fields=ADV_INSIGHTS_FIELDS,
         action_breakdowns=("action_type",),
         action_attribution_windows=('7d_click', '1d_view'),
+        batch_size=500
     )
-    # action_breakdowns[0] must be one of the following values: action_device, conversion_destination, matched_persona_id, matched_persona_name, signal_source_bucket, 
-    # standard_event_content_type, action_canvas_component_name, 
-    # action_carousel_card_id, action_carousel_card_name, action_destination, action_reaction, action_target_id, action_type, action_video_sound, action_video_type",
+
+    # change batch size? 
+
+
+
+    # i may need to add filtering to remove unnecessary data: especially for actions
+    #     curl -G \
+    # -d 'access_token=<ACCESS_TOKEN>' \
+    # -d 'level=campaign' \
+    # -d 'filtering=[{field:"ad.impressions",operator:"GREATER_THAN",value:0}]' \
+    # 'https://graph.facebook.com/v2.7/act_<ACCOUNT_ID>/insights'
+
+    # filtering=[{field:"action_type",operator:"IN",value:["offsite_conversion.fb_pixel_purchase", "offsite_conversion.fb_pixel_add_to_cart"]}]'
+
     info = pipeline.run(fb_ads_insights, write_disposition="replace")
     print(info)
 
