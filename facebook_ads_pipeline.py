@@ -128,8 +128,11 @@ def load_historic_insights() -> None:
     )
     # 2022-01-01 is the start of our historic data
     number_of_days = 3 #(datetime.today() - datetime(2022, 1, 1)).days
+
     fb_ads_insights = facebook_insights_source(
         initial_load_past_days=number_of_days,
+        time_increment_days=1,
+        attribution_window_days_lag=7,
         fields=ADV_INSIGHTS_FIELDS,
         action_breakdowns=("action_type",),
         action_attribution_windows=('7d_click', '1d_view'),
@@ -140,17 +143,48 @@ def load_historic_insights() -> None:
              "value":["offsite_conversion.fb_pixel_purchase"]}
         ]
     )
+    fb_ads_insights.root_key = True
 
-    info = pipeline.run(fb_ads_insights)
+    info = pipeline.run(fb_ads_insights, write_disposition="replace")
     print(info)
 
 
+def load_actions_with_filter() -> None:
+    """Load action insights with a filter for certain purchase conversions (fb_pixel_purchase)"""
+    pipeline = dlt.pipeline(
+        pipeline_name='facebook_insights_fb_pixel_purchase',
+        destination='duckdb',
+        dataset_name='facebook_insights_fb_pixel_purchases',
+        progress="log"
+    )
+
+    number_of_days = 10
+
+    fb_ads_insights = facebook_insights_source(
+        initial_load_past_days=number_of_days,
+        time_increment_days=1,
+        attribution_window_days_lag=7,
+        fields=ADV_INSIGHTS_FIELDS,
+        action_breakdowns=("action_type",),
+        action_attribution_windows=('7d_click', '1d_view'),
+        batch_size=50,
+        filtering=[
+            {"field": "action_type",
+             "operator":"IN",
+             "value":["offsite_conversion.fb_pixel_purchase"]}
+        ]
+    )
+    # this may not be necessary since the write disposition seems to be merge by default (and not replace)
+    fb_ads_insights.root_key = True
+
+    info = pipeline.run(fb_ads_insights)
+    print(info)
 
 if __name__ == "__main__":
     # load_all_ads_objects()
     # merge_ads_objects()
 
-    load_historic_insights()
+    load_actions_with_filter()
     # load_ads_with_custom_fields()
     # load_only_disapproved_ads()
     # load_and_enrich_objects()
