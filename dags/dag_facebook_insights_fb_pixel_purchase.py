@@ -35,21 +35,59 @@ default_task_args = {
     max_active_runs=1,
     default_args=default_task_args
 )
-def load_data():
+def load_facebook_action_insights():
     # set `use_data_folder` to True to store temporary data on the `data` bucket. Use only when it does not fit on the local storage
-    tasks = PipelineTasksGroup("pipeline_decomposed", use_data_folder=False, wipe_local_data=True)
+    tasks = PipelineTasksGroup("facebook_action_insights", use_data_folder=False, wipe_local_data=True)
 
-    # import your source from pipeline script
-    from pipeline_or_source_script import source
+    from facebook_ads import (
+        facebook_ads_source,
+        facebook_insights_source,
+        DEFAULT_ADCREATIVE_FIELDS,
+        ADV_INSIGHTS_FIELDS,
+        AdCreative,
+        enrich_ad_objects,
+    )
+    pipeline = dlt.pipeline(
+        pipeline_name='facebook_insights_fb_pixel_purchase',
+        destination='duckdb',
+        dataset_name='facebook_insights_fb_pixel_purchases',
+        progress="log"
+    )
 
-    # modify the pipeline parameters 
-    pipeline = dlt.pipeline(pipeline_name='pipeline_name',
-                     dataset_name='dataset_name',
-                     destination='duckdb',
-                     full_refresh=False # must be false if we decompose
-                     )
+    number_of_days = 10
+
+    fb_ads_insights_source = facebook_insights_source(
+        initial_load_past_days=number_of_days,
+        time_increment_days=1,
+        attribution_window_days_lag=7,
+        fields=ADV_INSIGHTS_FIELDS,
+        action_breakdowns=("action_type",),
+        action_attribution_windows=('7d_click', '1d_view'),
+        batch_size=50,
+        # dev_mode=False,
+        filtering=[
+            {"field": "action_type",
+             "operator":"IN",
+             "value":["offsite_conversion.fb_pixel_purchase"]}
+        ]
+    )
+    # this may not be necessary since the write disposition seems to be merge by default (and not replace)
+    # fb_ads_insights_source.root_key = True
+
+    # info = pipeline.run(fb_ads_insights_source)
+    # print(info)
+
+
+
+    # # modify the pipeline parameters 
+    # pipeline = dlt.pipeline(pipeline_name='pipeline_name',
+    #                  dataset_name='dataset_name',
+    #                  destination='duckdb',
+    #                  full_refresh=False # must be false if we decompose
+    #                  )
+
     # create the source, the "serialize" decompose option will converts dlt resources into Airflow tasks. use "none" to disable it
-    tasks.add_run(pipeline, source(), decompose="serialize", trigger_rule="all_done", retries=0, provide_context=True)
+    tasks.add_run(pipeline, fb_ads_insights_source, decompose="serialize", trigger_rule="all_done", retries=0, provide_context=True)
 
 
-load_data()
+load_facebook_action_insights()
